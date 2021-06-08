@@ -13,6 +13,7 @@ from .base_wrapper_dataset import BaseWrapperDataset
 from .add_target_dataset import AddTargetDataset
 from .append_token_dataset import AppendTokenDataset
 from .audio.raw_audio_dataset import BinarizedAudioDataset, FileAudioDataset
+from .audio.kaldi_dataset import KaldiFeatDataset
 from .audio.hubert_dataset import HubertDataset
 from .backtranslation_dataset import BacktranslationDataset
 from .bucket_pad_length_dataset import BucketPadLengthDataset
@@ -90,6 +91,7 @@ __all__ = [
     "IndexedCachedDataset",
     "IndexedDataset",
     "IndexedRawTextDataset",
+    "KaldiFeatDataset",
     "LanguagePairDataset",
     "LeftPadDataset",
     "ListDataset",

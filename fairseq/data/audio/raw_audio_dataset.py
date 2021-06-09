@@ -66,7 +66,11 @@ class RawAudioDataset(FairseqDataset):
             feats = feats.mean(-1)
 
         if curr_sample_rate != self.sample_rate:
-            raise Exception(f"sample rate: {curr_sample_rate}, need {self.sample_rate}")
+                import librosa
+                ratio = curr_sample_rate / self.sample_rate
+                signal = librosa.resample(feats.numpy(), ratio, 1, res_type="kaiser_best")
+                feats = torch.from_numpy(signal)
+            # raise Exception(f"sample rate: {curr_sample_rate}, need {self.sample_rate}")
 
         assert feats.dim() == 1, feats.dim()
 

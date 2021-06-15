@@ -364,6 +364,7 @@ class Fbank2Vec2Model(BaseFairseqModel):
             encoder = conformer.Encoder(
                 cfg.encoder_input_dim,
                 attention_dim=cfg.encoder_embed_dim,
+                attention_heads=cfg.encoder_attention_heads,
                 linear_units=cfg.encoder_ffn_embed_dim,
                 num_blocks=cfg.encoder_layers,
                 dropout_rate=cfg.dropout,
@@ -379,6 +380,7 @@ class Fbank2Vec2Model(BaseFairseqModel):
             encoder = transformer.Encoder(
                 cfg.encoder_input_dim,
                 attention_dim=cfg.encoder_embed_dim,
+                attention_heads=cfg.encoder_attention_heads,
                 linear_units=cfg.encoder_ffn_embed_dim,
                 num_blocks=cfg.encoder_layers,
                 dropout_rate=cfg.dropout,

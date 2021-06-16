@@ -14,6 +14,7 @@ from .add_target_dataset import AddTargetDataset
 from .append_token_dataset import AppendTokenDataset
 from .audio.raw_audio_dataset import BinarizedAudioDataset, FileAudioDataset
 from .audio.kaldi_dataset import KaldiFeatDataset
+from .audio.augment_audio_dataset import AugmentFileAudioDataset
 from .audio.hubert_dataset import HubertDataset
 from .backtranslation_dataset import BacktranslationDataset
 from .bucket_pad_length_dataset import BucketPadLengthDataset
@@ -69,6 +70,7 @@ from .iterators import (
 __all__ = [
     "AddTargetDataset",
     "AppendTokenDataset",
+    "AugmentFileAudioDataset",
     "BacktranslationDataset",
     "BaseWrapperDataset",
     "BinarizedAudioDataset",

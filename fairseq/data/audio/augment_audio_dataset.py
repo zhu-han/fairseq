@@ -5,21 +5,8 @@
 
 
 import logging
-import os
-import sys
-import io
-
-import numpy as np
 import torch
-import torch.nn.functional as F
 
-from .. import FairseqDataset
-from ..data_utils import compute_mask_indices, get_buckets, get_bucketed_sizes
-from fairseq.data.audio.audio_utils import (
-    parse_path,
-    read_from_stored_zip,
-    is_sf_audio_data,
-)
 from .raw_audio_dataset import FileAudioDataset
 import numpy
 import scipy
@@ -189,6 +176,13 @@ class AugmentFileAudioDataset(FileAudioDataset):
 
     def collater(self, samples):
         out = super().collater(samples)
-        input = out["net_input"]
-        
+        raw_wavs = out["net_input"]["source"]
+        aug_wavs = torch.zeros_like(out["net_input"]["source"]).to(raw_wavs)
+        for i,wav in enumerate(raw_wavs.numpy()):
+            aug_wav = self.augment_center.voice_preturb_dynamic(wav, -20, 20, dbunit=True)
+            aug_wav = self.augment_center.fair_filed(wav)
+            aug_wav = self.augment_center.random_noise(wav, -40, -20, dbunit=True)
+            aug_wavs[i] = torch.from_numpy(aug_wav)
+        out["net_input"]["source"] = [raw_wavs, aug_wavs]
+
         return out

@@ -55,9 +55,9 @@ class AugWav2Vec2Model(Wav2Vec2Model):
         padding_count=None,
     ):
 
-        if len(source)== 1 or isinstance(source, torch.Tensor):
+        if isinstance(source, torch.Tensor):
             return super().forward(
-                source[0], 
+                source, 
                 padding_mask=padding_mask,
                 mask=mask,
                 features_only=features_only,

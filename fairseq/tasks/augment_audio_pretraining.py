@@ -42,8 +42,18 @@ class AugAudioPretrainingConfig(AudioPretrainingConfig):
             "help": "target sample rate. audio files will be up/down sampled to this rate"
         },
     )
-   
-
+    rir_dict: str = field(
+        default="None",
+        metadata={
+            "help": "target sample rate. audio files will be up/down sampled to this rate"
+        },
+    )  
+    noise_dict: str = field(
+        default="None",
+        metadata={
+            "help": "target sample rate. audio files will be up/down sampled to this rate"
+        },
+    )
 
 @register_task("augment_audio_pretraining", dataclass=AugAudioPretrainingConfig)
 class AugAudioPretrainingTask(AudioPretrainingTask):
@@ -92,6 +102,12 @@ class AugAudioPretrainingTask(AudioPretrainingTask):
                 normalize=task_cfg.normalize,
                 num_buckets=self.cfg.num_batch_buckets or int(self.cfg.tpu),
                 compute_mask_indices=(self.cfg.precompute_mask_indices or self.cfg.tpu),
+                augment_config={
+                    "seed": 8888, 
+                    "rir_dict":self.cfg.rir_dict, 
+                    "noise_dice":self.cfg.noise_dict, 
+                    "sample_rate": self.cfg.aug_sample_rate
+                },
                 **self._get_mask_precompute_kwargs(task_cfg),
             )
 

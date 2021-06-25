@@ -22,21 +22,24 @@ class AugmentCenter(object):
     def __init__(self, seed=8888, rir_dict=None, noise_dice=None, sample_rate=16000):
         self.state = numpy.random.RandomState(seed)
         self.sample_rate = sample_rate
-        self.rir_list = [] if rir_dict is None else self.read_source(rir_dict)
-        self.noise_list = []  if noise_dice is None else self.read_source(noise_dice)
-        self.noise_list = [ noise/numpy.sqrt((noise ** 2).mean()) for noise in self.noise_list]
+        self.rir_list = [] if rir_dict is None or rir_dict == "None" else self.read_source(rir_dict)
+        self.noise_list = []  if noise_dice is None or noise_dice == "None" else self.read_source(noise_dice)
+        # self.noise_list = [ noise/numpy.sqrt((noise ** 2).mean()) for noise in self.noise_list]
         
+    def read_wav(self, filename):
+        signal, rate = sf.read(filename)
+        if rate != self.sample_rate: 
+            ratio = rate / self.sample_rate
+            signal = librosa.resample(signal, ratio, 1, res_type="kaiser_best")
+        return signal
+
         
     def read_source(self, utt_scp):
         utt_dict = []
         with open(utt_scp, "r") as f:
             for line in f:
                 utt, filename = line.rstrip().split(None, 1)
-                signal, rate = sf.read(filename)
-                if rate != self.sample_rate: 
-                    ratio = rate / self.sample_rate
-                    signal = librosa.resample(signal, ratio, 1, res_type="kaiser_best")
-                utt_dict.append(signal)
+                utt_dict.append(filename)
         return utt_dict
 
     def speed_preturb_samelength(self, x, lower=0.8, upper=1.5):
@@ -94,6 +97,8 @@ class AugmentCenter(object):
             noise = self.state.normal(0, 1, len(x))
         else:
             noise = self.noise_list[noise_pos]
+            noise = self.read_wav(noise)
+            noise = noise/numpy.sqrt((noise ** 2).mean())            
             diff = abs(len(x) - len(noise))
             offset = self.state.randint(0, diff)
             if len(noise) > len(x):
@@ -113,6 +118,7 @@ class AugmentCenter(object):
             return x
         xlen = len(x)
         rir = self.rir_list[self.state.randint(len(self.rir_list))]
+        rir = self.read_wav(rir)
         x = scipy.signal.convolve(x, rir, mode="full")[:xlen]
         return x / x.max() * 0.3
 
@@ -180,9 +186,13 @@ class AugmentFileAudioDataset(FileAudioDataset):
         aug_wavs = torch.zeros_like(out["net_input"]["source"]).to(raw_wavs)
         for i,wav in enumerate(raw_wavs.numpy()):
             aug_wav = self.augment_center.voice_preturb_dynamic(wav, -20, 20, dbunit=True)
-            aug_wav = self.augment_center.fair_filed(wav)
-            aug_wav = self.augment_center.random_noise(wav, -40, -20, dbunit=True)
-            aug_wavs[i] = torch.from_numpy(aug_wav)
+            aug_wav = self.augment_center.frequence_preturb_dynamic(aug_wav, -20, 20, dbunit=True)
+            aug_wav = self.augment_center.frequence_shift(aug_wav)
+            aug_wav = self.augment_center.fair_filed(aug_wav)
+            aug_wav = self.augment_center.random_noise(aug_wav, -40, -20, dbunit=True)
+            length = min(len(wav), len(aug_wav))
+            aug_wavs[i,:length] = torch.from_numpy(aug_wav)[:length]
+
         out["net_input"]["source"] = [raw_wavs, aug_wavs]
 
         return out

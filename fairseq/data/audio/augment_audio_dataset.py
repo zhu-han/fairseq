@@ -182,6 +182,8 @@ class AugmentFileAudioDataset(FileAudioDataset):
 
     def collater(self, samples):
         out = super().collater(samples)
+        if 'net_input' not in out:
+            return out
         raw_wavs = out["net_input"]["source"]
         aug_wavs = torch.zeros_like(out["net_input"]["source"]).to(raw_wavs)
         for i,wav in enumerate(raw_wavs.numpy()):

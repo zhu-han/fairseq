@@ -554,17 +554,7 @@ class Fbank2Vec2Model(BaseFairseqModel):
         Computes the output length of the convolutional layers
         """
 
-        def _conv_out_length(input_length, kernel_size, stride):
-            return torch.floor((input_length - kernel_size) / stride + 1)
-
-        conv_cfg_list = eval(self.cfg.conv_feature_layers)
-
-        for i in range(len(conv_cfg_list)):
-            input_lengths = _conv_out_length(
-                input_lengths, conv_cfg_list[i][1], conv_cfg_list[i][2]
-            )
-
-        return input_lengths.to(torch.long)
+        return ((input_lengths - 1) // 2 - 1) // 2
 
     def forward(
         self,
@@ -577,14 +567,18 @@ class Fbank2Vec2Model(BaseFairseqModel):
         mask_channel_indices=None,
         padding_count=None,
     ):
+        if padding_mask is not None:
+            encoder_mask = ~padding_mask[:,:,0].unsqueeze(1)
+        else:
+            encoder_mask = None
         if self.feature_grad_mult > 0:
             # features = self.feature_extractor(source)
-            features, _ = self.encoder.feature_extractor(source, None)
+            features, encoder_mask = self.encoder.feature_extractor(source, encoder_mask)
             if self.feature_grad_mult != 1.0:
                 features = GradMultiply.apply(features, self.feature_grad_mult)
         else:
             with torch.no_grad():
-                features, _ = self.encoder.feature_extractor(source, None)
+                features, encoder_mask = self.encoder.feature_extractor(source, encoder_mask)
                 # features = self.feature_extractor(source)
 
         features_pen = features.float().pow(2).mean()
@@ -594,6 +588,7 @@ class Fbank2Vec2Model(BaseFairseqModel):
         unmasked_features = features.clone()
 
         if padding_mask is not None and padding_mask.any():
+            padding_mask = padding_mask[:,:,0]
             input_lengths = (1 - padding_mask.long()).sum(-1)
             # apply conv formula to get real output_lengths
             output_lengths = self._get_feat_extract_output_lengths(
@@ -659,14 +654,14 @@ class Fbank2Vec2Model(BaseFairseqModel):
 
         # x, layer_results = self.encoder(
         #     x, padding_mask=padding_mask, layer=layer)
-        x, _ = self.encoder.transformer_forward(x, None)
+        x, _ = self.encoder.transformer_forward(x, encoder_mask)
 
         if features_only:
             return {
                 "x": x,
                 "padding_mask": padding_mask,
                 "features": unmasked_features,
-                # "layer_results": layer_results,
+                "layer_results": None,
             }
 
         if self.quantizer:

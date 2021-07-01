@@ -71,7 +71,7 @@ class AdaptiveInput(nn.Module):
         for i in range(len(self.cutoff)):
             mask = input.lt(self.cutoff[i])
             if i > 0:
-                mask.mul_(input.ge(self.cutoff[i - 1]))
+                mask = torch.mul(mask, input.ge(self.cutoff[i - 1]))
                 chunk_input = input[mask] - self.cutoff[i - 1]
             else:
                 chunk_input = input[mask]

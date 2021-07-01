@@ -75,7 +75,6 @@ class AdaptiveSoftmax(nn.Module):
         qn_block_size=8,
     ):
         super().__init__()
-
         if vocab_size > cutoff[-1]:
             cutoff = cutoff + [vocab_size]
         else:
@@ -210,7 +209,6 @@ class AdaptiveSoftmax(nn.Module):
         Returns:
             2 lists: output for each cutoff section and new targets by cut off
         """
-
         input = input.contiguous().view(-1, input.size(-1))
         input = self.dropout_module(input)
 
@@ -230,7 +228,6 @@ class AdaptiveSoftmax(nn.Module):
         Computes the log probabilities for all the words of the vocabulary,
         given a 2D tensor of hidden vectors.
         """
-
         bsz, length, dim = input.size()
         input = input.contiguous().view(-1, dim)
 
@@ -241,7 +238,6 @@ class AdaptiveSoftmax(nn.Module):
 
         head_y = self.head(input)
         log_probs = head_y.new_zeros(input.size(0), self.vocab_size)
-
         head_sz = self.cutoff[0] + len(self.tail)
         log_probs[:, :head_sz] = self.lsm(head_y)
         tail_priors = log_probs[:, self.cutoff[0] : head_sz].clone()
@@ -249,18 +245,18 @@ class AdaptiveSoftmax(nn.Module):
         for i in range(len(self.tail)):
             start = self.cutoff[i]
             end = self.cutoff[i + 1]
-
+            
             if target_idxs is None:
-                tail_out = log_probs[:, start:end]
+                tail_out = log_probs[:, start:end].clone()
                 tail_out.copy_(self.tail[i](input))
-                log_probs[:, start:end] = self.lsm(tail_out).add_(
+                log_probs[:, start:end] = self.lsm(tail_out).add(
                     tail_priors[:, i, None]
                 )
             elif target_idxs[i] is not None:
                 idxs = target_idxs[i]
-                tail_out = log_probs[idxs, start:end]
+                tail_out = log_probs[idxs, start:end].clone()
                 tail_out.copy_(self.tail[i](input[idxs]))
-                log_probs[idxs, start:end] = self.lsm(tail_out).add_(
+                log_probs[idxs, start:end] = self.lsm(tail_out).add(
                     tail_priors[idxs, i, None]
                 )
 

@@ -5,6 +5,7 @@
 
 import math
 from dataclasses import dataclass, field
+import random
 from typing import List, Tuple
 
 import numpy as np
@@ -251,12 +252,21 @@ class AugWav2Vec2Model(Wav2Vec2Model):
 
         return result
 
+    # def compute_preds_list(self, x_list, y_list, negatives_list):
+    #     import random
+    #     x = random.choice(x_list)
+    #     y = random.choice(y_list)
+    #     neg = torch.cat(negatives_list)
+    #     neg_idex = list(range(neg.size(0)))
+    #     neg_idex = random.sample(neg_idex, self.cfg.num_negatives) 
+    #     neg = neg[neg_idex]
+    #     return self.compute_preds(x, y, neg)
+
     def compute_preds_list(self, x_list, y_list, negatives_list):
-        import random
-        x = random.choice(x_list)
-        y = random.choice(y_list)
-        neg = torch.cat(negatives_list)
-        neg_idex = list(range(neg.size(0)))
-        neg_idex = random.sample(neg_idex, self.cfg.num_negatives) 
-        neg = neg[neg_idex]
-        return self.compute_preds(x, y, neg)
+        list_len = len(x_list)
+        logits_list = []
+        for i in range(list_len):
+            for j in range(list_len):
+                logits_list.append(self.compute_preds(x_list[i], y_list[j], negatives_list[j]))
+        logits = torch.mean(torch.stack(logits_list, dim=-1), dim=-1)
+        return logits
